@@ -1,0 +1,56 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/choosing-models/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: v
+        run: |
+          set -euo pipefail
+          version=$(grep -m1 -E '^  version: "' skills/choosing-models/SKILL.md | sed -E 's/^  version: "([^"]+)".*/\1/')
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "SKILL.md の metadata.version が読めません: '$version'" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if already released
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.v.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "v${{ steps.v.outputs.version }} はリリース済みなので何もしません。"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build zip
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          cd skills
+          zip -r "../choosing-models-v${{ steps.v.outputs.version }}.zip" choosing-models
+
+      - name: Create release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.v.outputs.version }}" \
+            "choosing-models-v${{ steps.v.outputs.version }}.zip" \
+            --title "v${{ steps.v.outputs.version }}" \
+            --notes "choosing-models v${{ steps.v.outputs.version }}"
