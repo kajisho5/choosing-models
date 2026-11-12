@@ -21,6 +21,10 @@ AI エージェントが、作業に合う Claude のモデル（haiku・sonnet�
 - [Claude Code のモデル設定](https://code.claude.com/docs/en/model-config)
 - [Claude Code のモデルと effort の選び方（公式ブログ）](https://claude.com/blog/claude-model-and-effort-level-in-claude-code)
 
+## ライセンス
+
+[MIT](LICENSE)
+
 ## リリース
 
 `skills/choosing-models/SKILL.md` の `metadata.version` を上げて main に入れると、まだそのバージョンのリリースがなければ GitHub Actions が自動でリリース（zip 付き）を作ります。
